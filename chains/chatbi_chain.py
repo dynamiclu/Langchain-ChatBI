@@ -12,19 +12,20 @@ from models.llm_tongyi import LLMTongyi
 class ChatBiChain:
     llm: object = None
     service: object = None
+    llm_out: object = None
     top_k: int = LLM_TOP_K
     llm_model: str
     his_query: str
 
     def init_cfg(self,
                  llm_model: str = LLM_MODEL_CHAT_GLM,
-                 embedding_model: str = EMBEDDING_MODEL,
+                 embedding_model: str = EMBEDDING_MODEL_DEFAULT,
                  llm_history_len=LLM_HISTORY_LEN,
                  top_k=LLM_TOP_K
                  ):
         self.init_mode(llm_model, llm_history_len)
-        if embedding_model != WEB_EMBEDDING_MODEL_DEFAULT:
-            self.service = SourceService(embedding_model, LOCAL_EMBEDDING_DEVICE)
+        self.service = SourceService(embedding_model, LOCAL_EMBEDDING_DEVICE)
+        self.llm_out = StructLLMOutput()
         self.his_query = ""
         self.top_k = top_k
         logger.info("--" * 30 + "ChatBiChain init " + "--" * 30)
@@ -42,10 +43,9 @@ class ChatBiChain:
             self.llm = LLMTongyi()
 
     def run_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, chat_history: str = "", top_k=VECTOR_SEARCH_TOP_K):
-        self.llm.history = chat_history + [[query, None]]
         result = self.get_answer(query, vs_path, top_k)
-        result = StructLLMOutput.out_json(result)
-        return result, self.llm.history
+        result = self.llm_out.out_json(result)
+        return result
 
     def get_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, top_k=VECTOR_SEARCH_TOP_K):
         response_schemas = [

@@ -7,6 +7,9 @@ class StructLLMOutput:
     def __init__(self):
         logger.info("--" * 30 + "StructOutput init " + "--" * 30)
     def out_json(self, info):
-        return info
+        if "result" in info:
+            return info["result"]
+        else:
+            return "LLM out format is fail"
 
 

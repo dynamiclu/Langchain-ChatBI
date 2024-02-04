@@ -1,5 +1,6 @@
 from configs.config import *
 from chains.chatbi_chain import ChatBiChain
+from common.log import logger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import gradio as gr
@@ -14,31 +15,45 @@ embedding_model_dict_list = list(embedding_model_dict.keys())
 llm_model_dict_list = list(llm_model_dict.keys())
 
 def get_file_list():
-    if not os.path.exists("content"):
+    if not os.path.exists("knowledge/content"):
         return []
-    return [f for f in os.listdir("content")]
+    return [f for f in os.listdir("knowledge/content")]
 
 file_list = get_file_list()
 
 def upload_file(file):
-    if not os.path.exists("content"):
-        os.mkdir("content")
+    if not os.path.exists("knowledge/content"):
+        os.mkdir("knowledge/content")
     filename = os.path.basename(file.name)
-    shutil.move(file.name, "content/" + filename)
+    shutil.move(file.name, "knowledge/content/" + filename)
     file_list.insert(0, filename)
     return gr.Dropdown(choices=file_list, value=filename)
 
-def reinit_model():
-    return ""
+def reinit_model(llm_model, embedding_model, llm_history_len, top_k, history):
+    try:
+        chain.init_cfg(llm_model=llm_model,
+                         embedding_model=embedding_model,
+                         llm_history_len=llm_history_len,
+                         top_k=top_k)
+        model_msg = """LLM模型已成功重新加载，请选择文件后点击"加载文件"按钮，再发送消息"""
+    except Exception as e:
+        logger.error(e)
+        model_msg = """sorry，模型未成功重新加载，请重新选择后点击"加载模型"按钮"""
+    return history + [[None, model_msg]]
 
-def get_answer(query, vs_path, history, top_k, llm_history_len):
-    result = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
-    history = history + [[None, result]]
-    return history, ""
+def get_answer(query, vs_path, history, top_k):
+    if vs_path:
+        history = history + [[query, None]]
+        result = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
+        history = history + [[None, result]]
+        return history, ""
+    else:
+        history = history + [[None, "请先加载文件后，再进行提问。"]]
+        return history, ""
 
-def get_vector_store(filepath, history, embedding_model):
+def get_vector_store(filepath, history):
     if chain.llm and chain.service:
-        vs_path = chain.service.init_knowledge_vector_store(["content/" + filepath])
+        vs_path = chain.service.init_knowledge_vector_store(["knowledge/content/" + filepath])
         if vs_path:
             file_status = "文件已成功加载，请开始提问"
         else:
@@ -58,7 +73,7 @@ def init_model():
 
 
 block_css = """.importantButton {
-    background: linear-gradient(45deg, #7e0570,#5d1c99, #6e00ff) !important;
+    background: linear-gradient(45deg, #7e05ff,#5d1c99, #6e00ff) !important;
     border: none !important;
 }
 
@@ -67,9 +82,9 @@ block_css = """.importantButton {
     border: none !important;
 }
 
-#chat_ai_bi {
+#chat_bi {
     height: 100%;
-    min-height: 540px;
+    min-height: 455px;
 }
 """
 
@@ -85,7 +100,7 @@ with gr.Blocks(css=block_css) as demo:
     gr.Markdown(webui_title)
     with gr.Row():
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(label=init_message, elem_id="chat_ai_bi", show_label=True)
+            chatbot = gr.Chatbot(label=init_message, elem_id="chat_bi", show_label=True)
             query = gr.Textbox(show_label=True, placeholder="请输入提问内容，按回车进行提交", label="输入框")
             send = gr.Button("🚀 发送")
         with gr.Column(scale=1):
@@ -101,7 +116,7 @@ with gr.Blocks(css=block_css) as demo:
                                         interactive=True)
             embedding_model = gr.Radio(embedding_model_dict_list,
                                        label="Embedding 模型",
-                                       value=WEB_EMBEDDING_MODEL_DEFAULT,
+                                       value=EMBEDDING_MODEL_DEFAULT,
                                        interactive=True)
             top_k = gr.Slider(1,
                               20,
@@ -132,18 +147,18 @@ with gr.Blocks(css=block_css) as demo:
                 outputs=selectFile)
     load_file_button.click(get_vector_store,
                            show_progress=True,
-                           inputs=[selectFile, chatbot, embedding_model],
+                           inputs=[selectFile, chatbot],
                            outputs=[vs_path, chatbot],
                            )
     query.submit(get_answer,
                  show_progress=True,
-                 inputs=[query, vs_path, chatbot, top_k, llm_history_len],
+                 inputs=[query, vs_path, chatbot, top_k],
                  outputs=[chatbot, query],
                  )
     # 发送按钮 提交
     send.click(get_answer,
                show_progress=True,
-               inputs=[query, vs_path, chatbot, top_k, llm_history_len],
+               inputs=[query, vs_path, chatbot, top_k],
                outputs=[chatbot, query],
                )
 

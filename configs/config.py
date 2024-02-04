@@ -1,19 +1,14 @@
 import torch.cuda
 import torch.backends
 
-APP_BOOT_PATH = "/Users/PycharmProjects/Langcahin-ChatBI"
-MODEL_BOOT_PATH = "/Users/PycharmProjects/Langcahin-ChatBI/llm/models"
+APP_BOOT_PATH = "/Users/PycharmProjects/Langchain-ChatBI"
+MODEL_BOOT_PATH = "/Users/PycharmProjects/Langchain-ChatBI/llm/models"
 
 # 本地chatGLM模型配置
 VECTOR_SEARCH_TOP_K = 10
 LOCAL_EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-local_llm_model_dict = {
-    "chatglm2-6b-int4": MODEL_BOOT_PATH + "/chatglm2-6b-int4",
-}
-LOCAL_LLM_MODEL = "chatglm2-6b-int4"
 LOCAL_LLM_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-EMBEDDING_MODEL = "text2vec"  # 复用配置
-VECTOR_STORE_PATH=""
+VECTOR_STORE_PATH = APP_BOOT_PATH + "/vector_store"
 # 多模型选择，向量模型选择
 embedding_model_dict = {
     "bge-large-zh": MODEL_BOOT_PATH + "/bge-large-zh-v1.5",
@@ -23,11 +18,11 @@ LLM_TOP_K = 6
 LLM_HISTORY_LEN = 8
 
 llm_model_dict = {
-    "chatglm2-6b-int4": "",
+    "chatglm2-6b-int4": MODEL_BOOT_PATH + "/chatglm2-6b-int4",
     "baichuan2-13b-chat": "",
     "qwen_14b_chat": "",
 }
-WEB_EMBEDDING_MODEL_DEFAULT = "bge-large-zh"
+EMBEDDING_MODEL_DEFAULT = "bge-large-zh"
 
 LLM_MODEL_CHAT_GLM = "chatglm2-6b-int4"
 LLM_MODEL_BAICHUAN = "baichuan2-13b-chat"

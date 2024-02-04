@@ -3,6 +3,7 @@ from langchain.document_loaders import UnstructuredFileLoader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.document_loaders.csv_loader import CSVLoader
+from common.log import logger
 from configs.config import *
 import sentence_transformers
 from typing import List
@@ -13,7 +14,7 @@ import datetime
 """
 class SourceService:
     def __init__(self,
-                 embedding_model: str = EMBEDDING_MODEL,
+                 embedding_model: str = EMBEDDING_MODEL_DEFAULT,
                  embedding_device=LOCAL_EMBEDDING_DEVICE):
         self.embeddings = HuggingFaceEmbeddings(model_name=embedding_model_dict[embedding_model], )
         self.embeddings.client = sentence_transformers.SentenceTransformer(self.embeddings.model_name,
@@ -29,7 +30,7 @@ class SourceService:
         docs = []
         for doc in os.listdir(docs_path):
             if doc.endswith('.txt'):
-                print(doc)
+                logger.info(doc)
                 loader = UnstructuredFileLoader(f'{docs_path}/{doc}', mode="elements")
                 doc = loader.load()
                 docs.extend(doc)
@@ -40,16 +41,16 @@ class SourceService:
                                     filepath: str or List[str]):
         if isinstance(filepath, str):
             if not os.path.exists(filepath):
-                print("路径不存在")
+                logger.error("路径不存在")
                 return None
             elif os.path.isfile(filepath):
                 file = os.path.split(filepath)[-1]
                 try:
                     loader = UnstructuredFileLoader(filepath, mode="elements")
                     docs = loader.load()
-                    print(f"{file} 已成功加载")
+                    logger.info(f"{file} 已成功加载")
                 except Exception as e:
-                    print(f"{file} 未能成功加载", e)
+                    logger.error(f"{file} 未能成功加载", e)
                     return None
             elif os.path.isdir(filepath):
                 docs = []
@@ -58,18 +59,18 @@ class SourceService:
                     try:
                         loader = UnstructuredFileLoader(fullfilepath, mode="elements")
                         docs += loader.load()
-                        print(f"{file} 已成功加载")
+                        logger.info(f"{file} 已成功加载")
                     except Exception as e:
-                        print(f"{file} 未能成功加载", e)
+                        logger.error(f"{file} 未能成功加载", e)
         else:
             docs = []
             for file in filepath:
                 try:
                     loader = UnstructuredFileLoader(file, mode="elements")
                     docs += loader.load()
-                    print(f"{file} 已成功加载")
+                    logger.info(f"{file} 已成功加载")
                 except Exception as e:
-                    print(f"{file} 未能成功加载", e)
+                    logger.error(f"{file} 未能成功加载", e)
 
         vector_store = FAISS.from_documents(docs, self.embeddings)
         vs_path = f"""{VECTOR_STORE_PATH}/{os.path.splitext(file)[0]}_FAISS_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}"""
@@ -92,5 +93,5 @@ class SourceService:
     def add_csv(self, document_path):
         loader = CSVLoader(file_path=document_path)
         doc = loader.load()
-        print("doc:", doc)
+        logger.info("doc:", doc)
 

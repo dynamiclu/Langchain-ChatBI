@@ -19,14 +19,14 @@ LLM_HISTORY_LEN = 8
 
 llm_model_dict = {
     "chatglm2-6b-int4": MODEL_BOOT_PATH + "/chatglm2-6b-int4",
-    "baichuan2-13b-chat": "",
-    "qwen_14b_chat": "",
+    "Baichuan2-53B": "",
+    "qwen-turbo": "",
 }
 EMBEDDING_MODEL_DEFAULT = "bge-large-zh"
 
 LLM_MODEL_CHAT_GLM = "chatglm2-6b-int4"
-LLM_MODEL_BAICHUAN = "baichuan2-13b-chat"
-LLM_MODEL_QIANWEN = "qwen_14b_chat"
+LLM_MODEL_BAICHUAN = "Baichuan2-53B"
+LLM_MODEL_QIANWEN = "qwen-turbo"
 
 """
   百川公司大模型

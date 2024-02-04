@@ -8,11 +8,9 @@ python-multipart
 nltk~=3.8.1
 uvicorn~=0.23.1
 starlette~=0.27.0
-# pydantic~=1.10.11
 unstructured[all-docs]>=0.10.12
 faiss-cpu
 sentence-transformers
-#transformers==4.27.1
 requests
 websockets==11.0.3
 pathlib
@@ -23,7 +21,5 @@ gradio-client==0.8.0
 pytesseract
 unstructured_pytesseract
 unstructured_inference
-#averaged_perceptron_tagger
 cpm_kernels
-
 protobuf==3.20.0

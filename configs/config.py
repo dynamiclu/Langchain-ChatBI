@@ -3,6 +3,7 @@ import torch.backends
 
 APP_BOOT_PATH = "/Users/PycharmProjects/Langcahin-ChatBI"
 MODEL_BOOT_PATH = "/Users/PycharmProjects/Langcahin-ChatBI/llm/models"
+
 # 本地chatGLM模型配置
 VECTOR_SEARCH_TOP_K = 10
 LOCAL_EMBEDDING_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
@@ -18,19 +19,19 @@ embedding_model_dict = {
     "bge-large-zh": MODEL_BOOT_PATH + "/bge-large-zh-v1.5",
     "text2vec": MODEL_BOOT_PATH + "/text2vec-large-chinese",
 }
+LLM_TOP_K = 6
+LLM_HISTORY_LEN = 8
 
-LLM_MODEL="baichuan2-13b-chat"
 llm_model_dict = {
+    "chatglm2-6b-int4": "",
     "baichuan2-13b-chat": "",
     "qwen_14b_chat": "",
 }
-WEB_EMBEDDING_MODEL_DEFAULT="bge-large-zh"
-dialogue_dict = {
-    "BI意图": "BI_AI",
-}
-DIALOGUE_TYPE = "BI意图"
+WEB_EMBEDDING_MODEL_DEFAULT = "bge-large-zh"
 
 LLM_MODEL_CHAT_GLM = "chatglm2-6b-int4"
+LLM_MODEL_BAICHUAN = "baichuan2-13b-chat"
+LLM_MODEL_QIANWEN = "qwen_14b_chat"
 
 """
   百川公司大模型

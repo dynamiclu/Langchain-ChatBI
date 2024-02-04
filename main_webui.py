@@ -1,53 +1,57 @@
 from configs.config import *
+from chains.chatbi_chain import ChatBiChain
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import gradio as gr
 import argparse
 import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import os
 import shutil
 
-
+chain = ChatBiChain()
 embedding_model_dict_list = list(embedding_model_dict.keys())
 
 llm_model_dict_list = list(llm_model_dict.keys())
-
-dialogue_dict_list = list(dialogue_dict.keys())
-
 
 def get_file_list():
     if not os.path.exists("content"):
         return []
     return [f for f in os.listdir("content")]
 
-
 file_list = get_file_list()
-
 
 def upload_file(file):
     if not os.path.exists("content"):
         os.mkdir("content")
     filename = os.path.basename(file.name)
     shutil.move(file.name, "content/" + filename)
-    # file_list首位插入新上传的文件
     file_list.insert(0, filename)
     return gr.Dropdown(choices=file_list, value=filename)
 
 def reinit_model():
-    return  ""
+    return ""
 
-def get_answer(query, vs_path, history, top_k, embedding_model,llm_history_len):
-     return history, ""
-
-
+def get_answer(query, vs_path, history, top_k, llm_history_len):
+    result = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
+    history = history + [[None, result]]
+    return history, ""
 
 def get_vector_store(filepath, history, embedding_model):
-
+    if chain.llm and chain.service:
+        vs_path = chain.service.init_knowledge_vector_store(["content/" + filepath])
+        if vs_path:
+            file_status = "文件已成功加载，请开始提问"
+        else:
+            file_status = "文件未成功加载，请重新上传文件"
+    else:
+        file_status = "模型未完成加载，请先在加载模型后再导入文件"
+        vs_path = None
     return vs_path, history + [[None, file_status]]
 
 
 def init_model():
     try:
+        chain.init_cfg()
         return """模型已成功加载，请选择文件后点击"加载文件"按钮"""
     except:
         return """模型未成功加载，请重新选择后点击"加载模型"按钮"""
@@ -70,7 +74,7 @@ block_css = """.importantButton {
 """
 
 webui_title = """
-# 🎉Langchain-ChatBI 项目🎉
+# Langchain-ChatBI 项目
 """
 init_message = """欢迎使用ChatBI，需点击'重新加载模型'，若选择Embedding模型，需选择或上传语料，再点击‘加载文件’ """
 
@@ -87,7 +91,7 @@ with gr.Blocks(css=block_css) as demo:
         with gr.Column(scale=1):
             llm_model = gr.Radio(llm_model_dict_list,
                                  label="LLM 模型",
-                                 value=LLM_MODEL,
+                                 value=LLM_MODEL_CHAT_GLM,
                                  interactive=True)
             llm_history_len = gr.Slider(0,
                                         10,
@@ -133,13 +137,13 @@ with gr.Blocks(css=block_css) as demo:
                            )
     query.submit(get_answer,
                  show_progress=True,
-                 inputs=[query, vs_path, chatbot, top_k, embedding_model, llm_history_len],
+                 inputs=[query, vs_path, chatbot, top_k, llm_history_len],
                  outputs=[chatbot, query],
                  )
     # 发送按钮 提交
     send.click(get_answer,
                show_progress=True,
-               inputs=[query, vs_path, chatbot, top_k, embedding_model, llm_history_len],
+               inputs=[query, vs_path, chatbot, top_k, llm_history_len],
                outputs=[chatbot, query],
                )
 

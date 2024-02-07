@@ -1,0 +1,3 @@
+问题: "宝马过去一个月的访问量？" 答案:{"data_indicators": "pv", "operator_type": "求和", "time_type": "月", "dimension": "宝马", "filter": "宝马","filter_type": "范围", "date_range": "2023-12-01,2023-12-31", "compare_type": "无"}
+问题: "大众2023年的访问用户？" 答案: {"data_indicators": "uv", "operator_type": "求和", "time_type": "年", "dimension": "大众", "filter": "大众","filter_type": "范围", "date_range": "2023-01-01,2023-12-31", "compare_type": "无"}
+问题: "东风汽车访问数据明细？" 答案: {"data_indicators": "pv、uv", "operator_type": "明细", "time_type": "天", "dimension": "东风汽车", "filter": "东风汽车","filter_type": "范围", "date_range": "2023-12-01,2023-12-31", "compare_type": "无"}

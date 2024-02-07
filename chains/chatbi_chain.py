@@ -8,6 +8,9 @@ from knowledge.source_service import SourceService
 from models.llm_chatglm import ChatGLM
 from models.llm_baichuan import LLMBaiChuan
 from models.llm_tongyi import LLMTongyi
+import datetime
+
+time_today = datetime.date.today()
 
 class ChatBiChain:
     llm: object = None
@@ -49,19 +52,21 @@ class ChatBiChain:
 
     def get_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, top_k=VECTOR_SEARCH_TOP_K):
         response_schemas = [
-            ResponseSchema(name="data_quota", description="数据指标: 班级人数"),
-            ResponseSchema(name="data_type", description="数据类型: 求和，最大值，最小值，平均值"),
+            ResponseSchema(name="data_indicators", description="数据指标: 如 PV、UV"),
+            ResponseSchema(name="operator_type", description="计算类型: 明细，求和，最大值，最小值，平均值"),
             ResponseSchema(name="time_type", description="时间类型: 天、周、月、小时"),
-            ResponseSchema(name="grade", description="年级"),
-            ResponseSchema(name="date_range", description="日期范围"),
-            ResponseSchema(name="compare_type", description="比较类型")
+            ResponseSchema(name="dimension", description="维度"),
+            ResponseSchema(name="filter", description="过滤条件"),
+            ResponseSchema(name="filter_type", description="过滤条件类型：大于，等于，小于，范围"),
+            ResponseSchema(name="date_range", description="日期范围,需按当前日期计算，假如当前日期为：2023-12-01，问 过去三个月或近几个月，则输出2023-09-01，2023-11-30；问过去一个月或上个月，则输出2023-11-01，2023-11-30；问八月或8月，则输出2023-08-01，2023-08-31；"),
+            ResponseSchema(name="compare_type", description="比较类型：无，同比，环比")
         ]
         output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
         format_instructions = output_parser.get_format_instructions(only_json=False)
         prompt = ChatPromptTemplate(
             messages=[
                 HumanMessagePromptTemplate.from_template(
-                    "从问题中抽取准确的信息，若不匹配，返回空，去掉description，\n{format_instructions} \n 已知内容:{context}  \n 问题：{question}"
+                    "从问题中抽取准确的信息，若不匹配，返回空，去掉description，\n{format_instructions} \n 当前日期:%s  \n 已知内容:{context}  \n 问题：{question}" % time_today
                 )
             ],
             input_variables=["context", "question"],

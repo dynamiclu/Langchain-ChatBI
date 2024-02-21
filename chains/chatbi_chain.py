@@ -55,8 +55,8 @@ class ChatBiChain:
             ResponseSchema(name="data_indicators", description="数据指标: 如 PV、UV"),
             ResponseSchema(name="operator_type", description="计算类型: 明细，求和，最大值，最小值，平均值"),
             ResponseSchema(name="time_type", description="时间类型: 天、周、月、小时"),
-            ResponseSchema(name="dimension", description="维度"),
-            ResponseSchema(name="filter", description="过滤条件"),
+            ResponseSchema(name="dimensions", description="维度"),
+            ResponseSchema(name="filters", description="过滤条件"),
             ResponseSchema(name="filter_type", description="过滤条件类型：大于，等于，小于，范围"),
             ResponseSchema(name="date_range", description="日期范围,需按当前日期计算，假如当前日期为：2023-12-01，问 过去三个月或近几个月，则输出2023-09-01，2023-11-30；问过去一个月或上个月，则输出2023-11-01，2023-11-30；问八月或8月，则输出2023-08-01，2023-08-31；"),
             ResponseSchema(name="compare_type", description="比较类型：无，同比，环比")

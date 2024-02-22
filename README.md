@@ -28,7 +28,7 @@ $ cd Langchain-ChatBI
 $ pip3 install -r requirements.txt 
 ```
 ### 2. 模型下载
-   2.1 向量模型
+   + 向量模型
     
 ```python
 # bge-large-en-v1.5 下载
@@ -38,9 +38,8 @@ model_dir = snapshot_download('AI-ModelScope/bge-large-en-v1.5')
 #text2vec 下载
 from modelscope import snapshot_download
 model_dir = snapshot_download('Jerry0/text2vec-large-chinese')
-
 ```
-2.2 大模型
++ 大模型
 ```python
 #chatglm2-6b-int4 下载
 from modelscope import snapshot_download

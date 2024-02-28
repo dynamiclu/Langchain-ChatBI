@@ -7,6 +7,7 @@ import gradio as gr
 import argparse
 import uvicorn
 import os
+import re
 import shutil
 
 chain = ChatBiChain()
@@ -14,12 +15,15 @@ embedding_model_dict_list = list(embedding_model_dict.keys())
 
 llm_model_dict_list = list(llm_model_dict.keys())
 
+
 def get_file_list():
     if not os.path.exists("knowledge/content"):
         return []
     return [f for f in os.listdir("knowledge/content")]
 
+
 file_list = get_file_list()
+
 
 def upload_file(file):
     if not os.path.exists("knowledge/content"):
@@ -29,37 +33,61 @@ def upload_file(file):
     file_list.insert(0, filename)
     return gr.Dropdown(choices=file_list, value=filename)
 
+
 def reinit_model(llm_model, embedding_model, llm_history_len, top_k, history):
     try:
         chain.init_cfg(llm_model=llm_model,
-                         embedding_model=embedding_model,
-                         llm_history_len=llm_history_len,
-                         top_k=top_k)
-        model_msg = """LLM模型已成功重新加载，请选择文件后点击"加载文件"按钮，再发送消息"""
+                       embedding_model=embedding_model,
+                       llm_history_len=llm_history_len,
+                       top_k=top_k)
+        model_msg = """The LLM model has been successfully reloaded. Please select the file and click the "Load File" button to send the message again"""
     except Exception as e:
         logger.error(e)
-        model_msg = """sorry，模型未成功重新加载，请重新选择后点击"加载模型"按钮"""
+        model_msg = """sorry，If the model does not reload successfully, click "Load model" button"""
     return history + [[None, model_msg]]
+
 
 def get_answer(query, vs_path, history, top_k):
     if vs_path:
         history = history + [[query, None]]
-        result = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
+        code = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
+
+        html = """
+           <head>
+             <title>Awesome-pyecharts</title>
+             <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"></script>
+           </head>
+
+           <body>
+             <div id="main" style="width: 300px;height:200px;"></div>
+             <script>
+               var myChart = echarts.init(document.getElementById("main"));
+
+               var option = echarts_code;
+
+               myChart.setOption(option);
+             </script>
+           </body>
+           """
+        html = html.replace("echarts_code", str(code))
+
+        result = f"""<iframe style="width: 100%; height: 240px" srcdoc='{html}'></iframe>"""
         history = history + [[None, result]]
         return history, ""
     else:
-        history = history + [[None, "请先加载文件后，再进行提问。"]]
+        history = history + [[None, "Please load the file before you ask questions."]]
         return history, ""
+
 
 def get_vector_store(filepath, history):
     if chain.llm and chain.service:
         vs_path = chain.service.init_knowledge_vector_store(["knowledge/content/" + filepath])
         if vs_path:
-            file_status = "文件已成功加载，请开始提问"
+            file_status = "The file has been successfully loaded. Please start asking questions"
         else:
-            file_status = "文件未成功加载，请重新上传文件"
+            file_status = "The file did not load successfully, please upload the file again"
     else:
-        file_status = "模型未完成加载，请先在加载模型后再导入文件"
+        file_status = "The model did not finished loading, please load the model before loading the file"
         vs_path = None
     return vs_path, history + [[None, file_status]]
 
@@ -67,9 +95,9 @@ def get_vector_store(filepath, history):
 def init_model():
     try:
         chain.init_cfg()
-        return """模型已成功加载，请选择文件后点击"加载文件"按钮"""
+        return """The model has been loaded successfully, please select the file and click the "Load file" button"""
     except:
-        return """模型未成功加载，请重新选择后点击"加载模型"按钮"""
+        return """The model did not load successfully, please click "Load model" button"""
 
 
 block_css = """.importantButton {
@@ -89,9 +117,9 @@ block_css = """.importantButton {
 """
 
 webui_title = """
-# Langchain-ChatBI 项目
+# Langchain-ChatBI Project
 """
-init_message = """欢迎使用ChatBI，需点击'重新加载模型'，若选择Embedding模型，需选择或上传语料，再点击‘加载文件’ """
+init_message = """Welcome to the ChatBI, click 'Reload the model', if you choose the Embedding model, select or upload the corpus, and then click 'Load the File' """
 
 model_status = init_model()
 
@@ -101,11 +129,13 @@ with gr.Blocks(css=block_css) as demo:
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(label=init_message, elem_id="chat_bi", show_label=True)
-            query = gr.Textbox(show_label=True, placeholder="请输入提问内容，按回车进行提交", label="输入框")
-            send = gr.Button("🚀 发送")
+            query = gr.Textbox(show_label=True,
+                               placeholder="Please enter the questions and submit them according to the return",
+                               label="Input Field")
+            send = gr.Button(" Submit")
         with gr.Column(scale=1):
             llm_model = gr.Radio(llm_model_dict_list,
-                                 label="LLM 模型",
+                                 label="LLM Model",
                                  value=LLM_MODEL_CHAT_GLM,
                                  interactive=True)
             llm_history_len = gr.Slider(0,
@@ -115,16 +145,16 @@ with gr.Blocks(css=block_css) as demo:
                                         label="LLM history len",
                                         interactive=True)
             embedding_model = gr.Radio(embedding_model_dict_list,
-                                       label="Embedding 模型",
+                                       label="Embedding Model",
                                        value=EMBEDDING_MODEL_DEFAULT,
                                        interactive=True)
             top_k = gr.Slider(1,
                               20,
                               value=6,
                               step=1,
-                              label="向量匹配 top k",
+                              label="top k",
                               interactive=True)
-            load_model_button = gr.Button("重新加载模型")
+            load_model_button = gr.Button("Reload Model")
 
             with gr.Tab("select"):
                 selectFile = gr.Dropdown(file_list,
@@ -135,7 +165,7 @@ with gr.Blocks(css=block_css) as demo:
                 file = gr.File(label="content file",
                                file_types=['.txt', '.md', '.docx', '.pdf']
                                )  # .style(height=100)
-            load_file_button = gr.Button("加载文件")
+            load_file_button = gr.Button("Load File")
     load_model_button.click(reinit_model,
                             show_progress=True,
                             inputs=[llm_model, embedding_model, llm_history_len, top_k, chatbot],
@@ -161,7 +191,6 @@ with gr.Blocks(css=block_css) as demo:
                inputs=[query, vs_path, chatbot, top_k],
                outputs=[chatbot, query],
                )
-
 
 app = FastAPI()
 app = gr.mount_gradio_app(app, demo, path="/")

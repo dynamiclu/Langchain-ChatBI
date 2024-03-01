@@ -52,4 +52,4 @@ model_dir = snapshot_download('ZhipuAI/chatglm2-6b-int4')
 $ python3 main_webui.py
 ```
 ### 4. 示例
-![](img/example.jpg)
+![](img/example.png)

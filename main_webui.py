@@ -127,12 +127,6 @@ with gr.Blocks(css=block_css) as demo:
     vs_path, file_status, model_status = gr.State(""), gr.State(""), gr.State(model_status)
     gr.Markdown(webui_title)
     with gr.Row():
-        with gr.Column(scale=2):
-            chatbot = gr.Chatbot(label=init_message, elem_id="chat_bi", show_label=True)
-            query = gr.Textbox(show_label=True,
-                               placeholder="Please enter the questions and submit them according to the return",
-                               label="Input Field")
-            send = gr.Button(" Submit")
         with gr.Column(scale=1):
             llm_model = gr.Radio(llm_model_dict_list,
                                  label="LLM Model",
@@ -166,6 +160,12 @@ with gr.Blocks(css=block_css) as demo:
                                file_types=['.txt', '.md', '.docx', '.pdf']
                                )  # .style(height=100)
             load_file_button = gr.Button("Load File")
+        with gr.Column(scale=2):
+            chatbot = gr.Chatbot(label=init_message, elem_id="chat_bi", show_label=True)
+            query = gr.Textbox(show_label=True,
+                               placeholder="Please enter the questions and submit them according to the return",
+                               label="Input Field")
+            send = gr.Button(" Submit")
     load_model_button.click(reinit_model,
                             show_progress=True,
                             inputs=[llm_model, embedding_model, llm_history_len, top_k, chatbot],

@@ -3,10 +3,6 @@ from query_data.db import selectMysql
 
 query_route = QueryRoute()
 
-out_dict = {"data_indicators": "pv", "operator_type": "avg", "time_type": "day",
-                        "dimensions": [{"enName": "name"}], "filters": [{"enName": "name", "val": "一汽红旗"}],
-                        "filter_type": "=", "date_range": "2023-02-01,2023-02-25", "compare_type": "无"}
-
 def exe_query(out_dict):
     result_data = []
     if out_dict:
@@ -19,7 +15,7 @@ def exe_query(out_dict):
             for row in list_data:
                 result = {
                     "name": row[0],
-                    "val": row[1]
+                    "value": row[1]
                 }
                 result_data.append(result)
     return result_data
@@ -37,12 +33,12 @@ def sql_assemble(out_dict: str):
     date_range = out_dict["date_range"]
     table_name = out_dict["table_name"]
     # compare_type = out_dict["compare_type"]
-    group_by_sql = ""
-    dim_sql = " "
+    group_by_sql, dim_sql, dim_group = "", "", ""
     condition = "1=1 "
     if dimensions:
         for line in dimensions:
-            dim_sql = line["enName"]
+            dim_sql = line["enName"] + " as name"
+            dim_group = line["enName"]
     if filters:
         for fi in filters:
             key = fi["enName"]
@@ -59,17 +55,17 @@ def sql_assemble(out_dict: str):
     operator_type_sql = ""
     if operator_type:
         if operator_type == "sum":
-            operator_type_sql = "sum(%s)" % data_indicators
-            group_by_sql = "group by %s" % dim_sql
+            operator_type_sql = "sum(%s) as value" % data_indicators
+            group_by_sql = "group by %s" % dim_group
         elif operator_type == "avg":
-            operator_type_sql = "avg(%s)" % data_indicators
-            group_by_sql = "group by %s" % dim_sql
+            operator_type_sql = "avg(%s) as value" % data_indicators
+            group_by_sql = "group by %s" % dim_group
         elif operator_type == "max":
-            operator_type_sql = "max(%s)" % data_indicators
-            group_by_sql = "group by %s" % dim_sql
+            operator_type_sql = "max(%s) as value" % data_indicators
+            group_by_sql = "group by %s" % dim_group
         elif operator_type == "min":
-            operator_type_sql = "min(%s)" % data_indicators
-            group_by_sql = "group by %s" % dim_sql
+            operator_type_sql = "min(%s) as value" % data_indicators
+            group_by_sql = "group by %s" % dim_group
         else:
             operator_type_sql = data_indicators
 
@@ -86,7 +82,8 @@ def filters_join(key: str, val: str, filter_type: str):
     filter_sql = ""
     if filter_type:
         if filter_type == "=":
-            filter_sql = " %s = '%s' " % (key, val)
+            filter_sql = " " + key + " like '%"+val+"%'"
+            # filter_sql = " %s = '%s' " % (key, val)
         if filter_type == ">":
             filter_sql = " %s > '%s' " % (key, val)
         if filter_type == ">=":
@@ -108,7 +105,7 @@ def time_type_format(begin_date: str, end_date: str, time_type: str):
         if time_type == "day" or time_type == "quarter" or time_type == "week":
             condition = " and dt >= '%s' and  dt <= '%s' " % (begin_date, end_date)
         elif time_type == "month":
-            condition = " and DATE_FORMAT(dt, '%Y-%m') >= '" + begin_date + "' and DATE_FORMAT(dt, '%Y-%m') <= '" + end_date + "' "
+            condition = " and DATE_FORMAT(dt, '%Y-%m') >= DATE_FORMAT('" + begin_date + "', '%Y-%m')  and DATE_FORMAT(dt, '%Y-%m') <= DATE_FORMAT('" + end_date + "', '%Y-%m')  "
     return condition
 
 
@@ -118,7 +115,7 @@ def time_type_format_eq(date_range: str, time_type: str):
         if time_type == "day":
             condition = "dt = '%s'  """ % date_range
         elif time_type == "month":
-            condition = " DATE_FORMAT(dt, '%Y-%m') = '" + date_range + "'"
+            condition = " DATE_FORMAT(dt, '%Y-%m') =  DATE_FORMAT('" + date_range + "', '%Y-%m') "
     return condition
 
 

@@ -23,9 +23,7 @@ from common.dict import *
 obj_dict = Dict()
 
 def out_json_data(info):
-    out_json = {"data_indicators": "pv", "operator_type": "101", "time_type": "day",
-                    "dimensions": [{"enName": "name"}], "filters": [{"enName": "name", "val": ""}],
-                    "filter_type": "eq", "date_range": "2023-02-01,2023-02-25", "compare_type": "无"}
+    out_json = {}
     if "data_indicators" in info:
         out_json["data_indicators"] = obj_dict.__value__(FILE_DICT_TYPE, str(info["data_indicators"]))
     if "operator_type" in info:
@@ -34,7 +32,7 @@ def out_json_data(info):
         out_json["time_type"] = obj_dict.__value__(FILE_DICT_TYPE, str(info["time_type"]))
     if "dimension" in info:
         out_json["dimensions"] = [{"enName": "name"}]
-    if "filters" in info:
+    if "filter" in info:
         out_json["filters"] = [{"enName": "name", "val": info["filter"]}]
     if "filter_type" in info:
         out_json["filter_type"] = obj_dict.__value__(FILE_DICT_TYPE, str(info["filter_type"]))
@@ -66,7 +64,7 @@ def out_echart_data(json_data):
     if json_data:
         for obj in json_data:
             name_list.append(obj["name"])
-            val_list.append(obj["value"])
+            val_list.append(int(obj["value"]))
 
     option = """
         {

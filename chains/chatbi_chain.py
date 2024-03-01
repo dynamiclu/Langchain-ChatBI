@@ -1,9 +1,9 @@
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain.output_parsers.json import parse_json_markdown
-from langchain.chains import RetrievalQA, LLMChain
+from langchain.chains import RetrievalQA
+from common.structured import StructuredOutputParser, ResponseSchema
 from common.log import logger
-from common.llm_output import out_json_data,out_echart_data
+from common.llm_output import out_json_data, out_echart_data
 from configs.config import *
 from knowledge.source_service import SourceService
 from models.llm_chatglm import ChatGLM
@@ -11,6 +11,8 @@ from models.llm_baichuan import LLMBaiChuan
 from models.llm_tongyi import LLMTongyi
 from query_data.query_execute import exe_query
 import datetime
+
+line_template = '\t"{name}": {type} '
 
 time_today = datetime.date.today()
 class ChatBiChain:
@@ -49,15 +51,15 @@ class ChatBiChain:
         try:
             resp = self.get_answer(query, vs_path, top_k)
             # print("resp:", resp)
-            # print("result:", resp["result"])
+            print("result:", resp["result"])
             res_dict = parse_json_markdown(resp["result"])
-            # print("res_dict:", res_dict)
+            print("res_dict:", res_dict)
             out_dict = out_json_data(res_dict)
-            # print("out_dict:", out_dict)
+            print("out_dict:", out_dict)
             result_data = exe_query(out_dict)
-            # print("result_data:", result_data)
+            print("result_data:", result_data)
             out_echart = out_echart_data(result_data)
-            # print("out_echart:", out_echart)
+            print("out_echart:", out_echart)
         except Exception as e:
             logger.error(e)
             # print(e)
@@ -80,7 +82,7 @@ class ChatBiChain:
         prompt = ChatPromptTemplate(
             messages=[
                 HumanMessagePromptTemplate.from_template(
-                    "从问题中抽取准确的信息，若不匹配，返回空，去掉description，\n{format_instructions}，输出时，去掉备注 \n 当前日期:%s  \n 已知内容:{context}  \n 问题：{question}" % time_today
+                    "从问题中抽取准确的信息，若不匹配，返回空，\n{format_instructions}，输出时，去掉备注 \n 当前日期:%s  \n 已知内容:{context}  \n 问题：{question}  " % time_today
                 )
             ],
             input_variables=["context", "question"],

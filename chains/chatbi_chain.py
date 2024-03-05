@@ -3,7 +3,7 @@ from langchain.output_parsers.json import parse_json_markdown
 from langchain.chains import RetrievalQA
 from common.structured import StructuredOutputParser, ResponseSchema
 from common.log import logger
-from common.llm_output import out_json_data, out_echart_data
+from common.llm_output import out_json_data
 from configs.config import *
 from knowledge.source_service import SourceService
 from models.llm_chatglm import ChatGLM
@@ -47,23 +47,14 @@ class ChatBiChain:
             self.llm = LLMTongyi()
 
     def run_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, chat_history: str = "", top_k=VECTOR_SEARCH_TOP_K):
-        out_echart = {}
         try:
             resp = self.get_answer(query, vs_path, top_k)
-            # print("resp:", resp)
-            print("result:", resp["result"])
             res_dict = parse_json_markdown(resp["result"])
-            print("res_dict:", res_dict)
             out_dict = out_json_data(res_dict)
-            print("out_dict:", out_dict)
             result_data = exe_query(out_dict)
-            print("result_data:", result_data)
-            out_echart = out_echart_data(result_data)
-            print("out_echart:", out_echart)
         except Exception as e:
             logger.error(e)
-            # print(e)
-        return out_echart
+        return result_data
 
 
     def get_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, top_k=VECTOR_SEARCH_TOP_K):

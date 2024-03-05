@@ -10,12 +10,11 @@ def exe_query(out_dict):
         if out_dict_result:
             out_dict["table_name"] = out_dict_result
             sql_query = sql_assemble(out_dict)
-            print("sql_query:", sql_query)
             list_data = selectMysql(sql_query)
             for row in list_data:
                 result = {
                     "name": row[0],
-                    "value": row[1]
+                    "value": int(row[1])
                 }
                 result_data.append(result)
     return result_data

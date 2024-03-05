@@ -1,6 +1,7 @@
 from configs.config import *
 from chains.chatbi_chain import ChatBiChain
 from common.log import logger
+from common.llm_output import dict_to_md
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import gradio as gr
@@ -14,7 +15,6 @@ chain = ChatBiChain()
 embedding_model_dict_list = list(embedding_model_dict.keys())
 
 llm_model_dict_list = list(llm_model_dict.keys())
-
 
 def get_file_list():
     if not os.path.exists("knowledge/content"):
@@ -50,29 +50,8 @@ def reinit_model(llm_model, embedding_model, llm_history_len, top_k, history):
 def get_answer(query, vs_path, history, top_k):
     if vs_path:
         history = history + [[query, None]]
-        code = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
-
-        html = """
-           <head>
-             <title>Awesome-pyecharts</title>
-             <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.1/dist/echarts.min.js"></script>
-           </head>
-
-           <body>
-             <div id="main" style="width: 300px;height:200px;"></div>
-             <script>
-               var myChart = echarts.init(document.getElementById("main"));
-
-               var option = echarts_code;
-
-               myChart.setOption(option);
-             </script>
-           </body>
-           """
-        html = html.replace("echarts_code", str(code))
-
-        result = f"""<iframe style="width: 100%; height: 240px" srcdoc='{html}'></iframe>"""
-        history = history + [[None, result]]
+        result_data = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
+        history = history + [[None, dict_to_md(result_data)]]
         return history, ""
     else:
         history = history + [[None, "Please load the file before you ask questions."]]

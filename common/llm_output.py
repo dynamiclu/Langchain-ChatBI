@@ -42,43 +42,9 @@ def out_json_data(info):
         out_json["compare_type"] = info["compare_type"]
     return out_json
 
-"""
-输出echart格式
-option = {
-                xAxis: {
-                type: 'category',
-                data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [{
-                data: [820, 932, 901, 934, 1290, 1330, 1320],
-                type: 'line'
-        }]
-    };
-"""
-def out_echart_data(json_data):
-    name_list = []
-    val_list = []
-    if json_data:
-        for obj in json_data:
-            name_list.append(obj["name"])
-            val_list.append(int(obj["value"]))
-
-    option = """
-        {
-            xAxis: {
-                type: 'category',
-                data: %s
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [{
-                data: %s,
-                type: 'line'
-            }]
-        }""" % (name_list, val_list)
-    return option
+def dict_to_md(dictionary):
+    md = ""
+    formatted_data = json.dumps(dictionary, indent=4, ensure_ascii=False)
+    md += f"```json\n"+formatted_data+"\n```\n"
+    return md
 

@@ -44,9 +44,9 @@ class QueryRoute:
         result_eq = selectMysql(SQL_eq)
         if (result_like and len(result_like) > 0) or (result_eq and len(result_eq) > 0):
             if result_like:
-                return result_like[0][0]
+                return result_like[0][0], result_like[0][1], result_like[0][2]
             elif result_eq:
-                return result_eq[0][0]
+                return result_eq[0][0], result_like[0][1], result_like[0][2]
         else:
             return None
 

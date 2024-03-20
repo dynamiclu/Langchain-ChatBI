@@ -2,7 +2,7 @@
 
 A conversational BI implemented using the Langchain framework and local vector library aims to help users find and understand data knowledge, analyze data, and gain insights into results. Through natural language dialogue, the threshold for data analysis is lowered.
 
-![](img/introduce.png)
+![](img/introduce.jpg)
 ## Deploy
 
 ### 1. Environmental configuration
@@ -45,4 +45,4 @@ model_dir = snapshot_download('ZhipuAI/chatglm2-6b-int4')
 $ python3 main_webui.py
 ```
 ### 4. Example
-![](img/example.png)
+![](img/example.jpg)

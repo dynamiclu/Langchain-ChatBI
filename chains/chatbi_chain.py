@@ -1,6 +1,7 @@
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.output_parsers.json import parse_json_markdown
-from langchain.chains import RetrievalQA
+from langchain.chains import RetrievalQA, LLMChain
+from langchain.memory import ConversationBufferWindowMemory
 from common.structured import StructuredOutputParser, ResponseSchema
 from common.log import logger
 from common.llm_output import out_json_data
@@ -18,6 +19,7 @@ time_today = datetime.date.today()
 class ChatBiChain:
     llm: object = None
     service: object = None
+    memory: object = None
     top_k: int = LLM_TOP_K
     llm_model: str
     his_query: str
@@ -36,6 +38,7 @@ class ChatBiChain:
 
     def init_mode(self, llm_model: str = LLM_MODEL_CHAT_GLM, llm_history_len: str = LLM_HISTORY_LEN):
         self.llm_model = llm_model
+        self.memory = ConversationBufferWindowMemory(k=llm_history_len)
         if llm_model == LLM_MODEL_CHAT_GLM:
             self.llm = ChatGLM()
             self.llm.load_model(model_name_or_path=llm_model_dict[LLM_MODEL_CHAT_GLM],
@@ -46,16 +49,58 @@ class ChatBiChain:
         elif llm_model == LLM_MODEL_QIANWEN:
             self.llm = LLMTongyi()
 
-    def run_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, chat_history: str = "", top_k=VECTOR_SEARCH_TOP_K):
+    def run_answer(self, query, vs_path, chat_history, top_k=VECTOR_SEARCH_TOP_K):
+        result_dict = {"data": "sorry，the query is fail"}
+        out_dict = self.get_intent_identify(query)
+        out_str = out_dict["info"]
+        if out_dict["code"] == 200 and "回答:" in out_str:
+            if "意图:完整" in out_str or "意图: 完整" in out_str:
+                query = out_str.split("回答:")[1]
+                # chat_history = chat_history + [[None, query]]
+            else:
+                result_dict["data"] = out_str.split("回答:")[1]
+                return result_dict, chat_history
+        else:
+            result_dict["data"] = out_str
+            return result_dict, chat_history
         try:
             resp = self.get_answer(query, vs_path, top_k)
             res_dict = parse_json_markdown(resp["result"])
-            out_dict = out_json_data(res_dict)
-            result_data = exe_query(out_dict)
+            out_json = out_json_data(res_dict)
+            result_dict["data"] = str(exe_query(out_json))
         except Exception as e:
             logger.error(e)
-        return result_data
+        return result_dict, chat_history
 
+    def get_intent_identify(self, query: str):
+        template = """ 你是智能数据分析助手，根据上下文和Human提问，识别对方数据分析意图('完整'、'缺失'、'闲聊')
+                        ## 背景知识
+                        完整：对方上下文信息中必须同时包含指标和时间范围，否则是缺失，例如：微博过去一个月的访问量，为完整
+                        缺失：对方上下文信息不完整，只有时间段或只有指标，例如：微博的访问量量或过去一个月的访问量，都为缺失
+                        闲聊：跟数据查询无关，如：你是谁
+
+                        ## 回答约束
+                        若数据分析意图为完整，要根据上下文信息总结成一句完整的语句，否则礼貌询问对方需要查询什么
+
+                        ## 输出格式
+                        意图:#，回答:#
+
+                        {history}
+                        Human: {human_input}
+                    """
+        out_dict = {"code": 500}
+        prompt = PromptTemplate(
+            input_variables=["history", "human_input"],
+            template=template
+        )
+        _chain = LLMChain(llm=self.llm, prompt=prompt, verbose=True, memory=self.memory)
+        try:
+            out_dict["info"] = _chain.predict(human_input=query)
+            out_dict["code"] = 200
+        except Exception as e:
+            print(e)
+            out_dict["info"] = "sorry，LLM model (%s) is fail，wait a minute..." % self.llm_model
+        return out_dict
 
     def get_answer(self, query: object, vs_path: str = VECTOR_STORE_PATH, top_k=VECTOR_SEARCH_TOP_K):
         response_schemas = [

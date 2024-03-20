@@ -50,8 +50,8 @@ def reinit_model(llm_model, embedding_model, llm_history_len, top_k, history):
 def get_answer(query, vs_path, history, top_k):
     if vs_path:
         history = history + [[query, None]]
-        result_data = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
-        history = history + [[None, dict_to_md(result_data)]]
+        result_data, history = chain.run_answer(query=query, vs_path=vs_path, chat_history=history, top_k=top_k)
+        history = history + [[None, result_data["data"]]]
         return history, ""
     else:
         history = history + [[None, "Please load the file before you ask questions."]]

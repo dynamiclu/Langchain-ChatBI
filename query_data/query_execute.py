@@ -1,26 +1,57 @@
 from query_data.query_route import QueryRoute
 from query_data.db import selectMysql
+from common.log import logger
+import json
+import requests
 
 query_route = QueryRoute()
 
 def exe_query(out_dict):
     result_data = []
     if out_dict:
-        out_dict_result = query_route.verify_query(out_dict)
+        out_dict_result, datasource_info, datasource_type = query_route.verify_query(out_dict)
         if out_dict_result:
-            out_dict["table_name"] = out_dict_result
-            sql_query = sql_assemble(out_dict)
-            list_data = selectMysql(sql_query)
-            for row in list_data:
-                result = {
-                    "name": row[0],
-                    "value": int(row[1])
-                }
-                result_data.append(result)
+            if datasource_type == 0:
+                out_dict["table_name"] = out_dict_result
+                sql_query = sql_assemble(out_dict)
+                list_data = selectMysql(sql_query)
+                for row in list_data:
+                    result = {
+                        "name": row[0],
+                        "value": int(row[1])
+                    }
+                    result_data.append(result)
+            elif datasource_type == 1:
+                out_dict["url"] = out_dict_result
+                result_data = url_get_data(out_dict, datasource_info)
+
     return result_data
 
+def url_get_data(out_dict, datasource_info):
+    # req_params_map = {
+    #
+    # }
+    req_params_map = datasource_info
+    try:
+        json_data = json.dumps(req_params_map)
+        res = requests.post(
+            url=out_dict["url"],
+            headers={
+                "Content-Type": "application/json",
+            },
+            data=json_data,
+            timeout=60
+        )
+        res_json = json.loads(res.text)
+        if res.status_code == 200:
+            return res_json["data"], res.status_code
+        else:
+            return res_json["msg"], res.status_code
+    except Exception as e:
+        logger.error(e)
+        return "query  fail, wait a second! ", 500
 
-def sql_assemble(out_dict: str):
+def sql_assemble(out_dict: dict):
     if out_dict is None:
         out_dict = {'data_indicators': 'pv', 'operator_type': 'sum', 'time_type': 'quarter', 'dimensions': [{'enName': 'name'}], 'filters': [{'enName': 'name', 'val': '一汽大众'}], 'filter_type': '=', 'date_range': '2023-04-01,2023-06-30', 'compare_type': '无', 'table_name': 'brand_data'}
     data_indicators = out_dict["data_indicators"]
@@ -70,7 +101,7 @@ def sql_assemble(out_dict: str):
 
     SQL = """
             SELECT %s,%s
-            FROM test_data.%s
+            FROM %s
             WHERE %s
             %s
             """ % (dim_sql, operator_type_sql, table_name, condition, group_by_sql)
@@ -120,4 +151,4 @@ def time_type_format_eq(date_range: str, time_type: str):
 
 if __name__ == "__main__":
     sql = sql_assemble(None)
-    print("sql=",sql)
+    print("sql=", sql)
